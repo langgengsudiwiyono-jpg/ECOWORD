@@ -1,6 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // === KONFIGURASI FIREBASE KAMU DI SINI ===
 const firebaseConfig = {
@@ -14,75 +13,25 @@ const firebaseConfig = {
 // =========================================
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Cek apakah user login, untuk mengarahkan halaman
-onAuthStateChanged(auth, (user) => {
-    if (window.location.pathname.includes('index.html')) {
-        if (!user) {
-            window.location.href = 'login.html';
-        } else {
-            document.getElementById('userEmail').textContent = user.email;
-            loadGlossary(user.uid);
-        }
-    } else if (window.location.pathname.includes('login.html')) {
-        if (user) {
-            window.location.href = 'index.html';
-        }
-    }
-});
-
-// --- LOGICA LOGIN ---
-const loginBtn = document.getElementById('loginBtn');
-const signupBtn = document.getElementById('signupBtn');
-
-if (loginBtn) {
-    loginBtn.addEventListener('click', () => {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        signInWithEmailAndPassword(auth, email, password).catch(err => {
-            document.getElementById('errorMsg').style.display = 'block';
-            document.getElementById('errorMsg').textContent = err.message;
-        });
-    });
-}
-
-if (signupBtn) {
-    signupBtn.addEventListener('click', () => {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        createUserWithEmailAndPassword(auth, email, password).catch(err => {
-            document.getElementById('errorMsg').style.display = 'block';
-            document.getElementById('errorMsg').textContent = err.message;
-        });
-    });
-}
-
-// --- LOGOUT ---
-const logoutBtn = document.getElementById('logoutBtn');
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => signOut(auth));
-}
-
-// --- GLOSARIUM & GAME LOGIC ---
 let termsArray = [];
 let currentCardIndex = 0;
 
+// --- LOGIKA TAMBAH ISTILAH ---
 const addTermBtn = document.getElementById('addTermBtn');
 if (addTermBtn) {
     addTermBtn.addEventListener('click', async () => {
         const term = document.getElementById('termInput').value.trim();
         const def = document.getElementById('defInput').value.trim();
-        const user = auth.currentUser;
 
-        if (term && def && user) {
+        if (term && def) {
             try {
+                // Menambahkan data ke Firebase dengan timestamp server
                 await addDoc(collection(db, "glossary"), {
                     term: term,
                     definition: def,
-                    userId: user.uid,
-                    createdAt: new Date()
+                    createdAt: serverTimestamp() // Untuk mengurutkan kartu
                 });
                 document.getElementById('termInput').value = '';
                 document.getElementById('defInput').value = '';
@@ -93,41 +42,54 @@ if (addTermBtn) {
     });
 }
 
-function loadGlossary(userId) {
-    const q = query(collection(db, "glossary"), where("userId", "==", userId));
+// --- MEMUAT DATA REAL-TIME UNTUK SEMUA ORANG ---
+function loadGlossary() {
+    // Urutkan berdasarkan waktu dibuat
+    const q = query(collection(db, "glossary"), orderBy("createdAt", "asc"));
+    
     onSnapshot(q, (snapshot) => {
         termsArray = [];
         const list = document.getElementById('glossaryList');
         list.innerHTML = '';
         
+        let counter = 1;
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             data.id = docSnap.id;
+            data.cardNumber = counter; // Beri nomor urut kartu
             termsArray.push(data);
             
             // Tambahkan ke list HTML
             const li = document.createElement('li');
-            li.innerHTML = `<strong>${data.term}</strong>: ${data.definition} 
-                            <button onclick="deleteTerm('${docSnap.id}')">Hapus</button>`;
+            li.innerHTML = `
+                <div>
+                    <strong>#${counter} ${data.term}</strong> <br>
+                    <small>${data.definition}</small>
+                </div>
+                <button onclick="deleteTerm('${docSnap.id}')">Hapus</button>
+            `;
             list.appendChild(li);
+            counter++;
         });
 
+        // Update tampilan kartu
         if (termsArray.length > 0) {
-            currentCardIndex = 0;
+            if (currentCardIndex >= termsArray.length) currentCardIndex = 0;
             updateFlashcard();
         } else {
             document.getElementById('cardTerm').textContent = "Belum ada istilah";
-            document.getElementById('cardDef').textContent = "Tambahkan istilah dulu!";
+            document.getElementById('cardDef').textContent = "Tambahkan istilah pertamamu!";
+            document.getElementById('cardNumber').textContent = "#0";
         }
     });
 }
 
-// Buat fungsi delete global agar bisa dipanggil dari HTML
+// Fungsi delete global
 window.deleteTerm = async (id) => {
     await deleteDoc(doc(db, "glossary", id));
 }
 
-// --- GAME FLASHCARD ---
+// --- KONTROL GAME FLASHCARD ---
 const flashcard = document.getElementById('flashcard');
 const flipBtn = document.getElementById('flipBtn');
 const nextBtn = document.getElementById('nextBtn');
@@ -142,8 +104,8 @@ if (nextBtn) {
     nextBtn.addEventListener('click', () => {
         if (termsArray.length === 0) return;
         currentCardIndex = (currentCardIndex + 1) % termsArray.length;
-        flashcard.classList.remove('flipped'); // Reset posisi kartu
-        setTimeout(updateFlashcard, 300); // Tunggu animasi selesai
+        flashcard.classList.remove('flipped');
+        setTimeout(updateFlashcard, 300);
     });
 }
 
@@ -161,5 +123,9 @@ function updateFlashcard() {
         const card = termsArray[currentCardIndex];
         document.getElementById('cardTerm').textContent = card.term;
         document.getElementById('cardDef').textContent = card.definition;
+        document.getElementById('cardNumber').textContent = `#${card.cardNumber}`;
     }
 }
+
+// Mulai memuat data saat web dibuka
+loadGlossary();
