@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glosarium & Game Kartu</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Glosarium Saya</h1>
+        <div class="user-info">
+            <span id="userEmail"></span>
+            <button id="logoutBtn">Logout</button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Form Tambah Istilah -->
+        <section class="card form-section">
+            <h2>Tambah / Edit Istilah</h2>
+            <input type="text" id="termInput" placeholder="Istilah (misal: HTML)">
+            <textarea id="defInput" placeholder="Definisi"></textarea>
+            <button id="addTermBtn">Simpan Istilah</button>
+        </section>
+
+        <!-- Game Flashcard -->
+        <section class="card game-section">
+            <h2>Game Tebak Kartu</h2>
+            <div class="flashcard-container">
+                <div class="flashcard" id="flashcard">
+                    <div class="front">
+                        <p>Istilah:</p>
+                        <h3 id="cardTerm">Klik "Mulai Game"</h3>
+                    </div>
+                    <div class="back">
+                        <p>Definisi:</p>
+                        <h3 id="cardDef">-</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="game-controls">
+                <button id="prevBtn">Sebelumnya</button>
+                <button id="flipBtn">Balik Kartu</button>
+                <button id="nextBtn">Berikutnya</button>
+            </div>
+        </section>
+
+        <!-- Daftar Glosarium -->
+        <section class="card list-section">
+            <h2>Daftar Istilah</h2>
+            <ul id="glossaryList"></ul>
+        </section>
+    </main>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
