@@ -3,52 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glosarium & Game Kartu</title>
+    <title>Glosarium STAN Card Game</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>Glosarium Saya</h1>
-        <div class="user-info">
-            <span id="userEmail"></span>
-            <button id="logoutBtn">Logout</button>
-        </div>
+        <h1>Glosarium STAN Interaktif</h1>
+        <p class="subtitle">Server Publik Real-Time • Tambahkan Istilahmu!</p>
     </header>
 
     <main>
         <!-- Form Tambah Istilah -->
         <section class="card form-section">
-            <h2>Tambah / Edit Istilah</h2>
-            <input type="text" id="termInput" placeholder="Istilah (misal: HTML)">
-            <textarea id="defInput" placeholder="Definisi"></textarea>
-            <button id="addTermBtn">Simpan Istilah</button>
+            <h2>Tambah Istilah Baru</h2>
+            <input type="text" id="termInput" placeholder="Masukkan Istilah (misal: APBN)">
+            <textarea id="defInput" placeholder="Masukkan Definisi"></textarea>
+            <button id="addTermBtn">Tambahkan ke Glosarium</button>
         </section>
 
-        <!-- Game Flashcard -->
+        <!-- Game Flashcard ala Pokemon -->
         <section class="card game-section">
-            <h2>Game Tebak Kartu</h2>
+            <h2>Kartu Glosarium</h2>
             <div class="flashcard-container">
                 <div class="flashcard" id="flashcard">
-                    <div class="front">
-                        <p>Istilah:</p>
-                        <h3 id="cardTerm">Klik "Mulai Game"</h3>
+                    <!-- Sisi Depan Kartu (Gambar & Nama) -->
+                    <div class="card-face card-front">
+                        <div class="card-header">
+                            <span class="card-name" id="cardTerm">Istilah</span>
+                            <span class="card-number" id="cardNumber">#0</span>
+                        </div>
+                        <div class="card-image-area">
+                            <!-- Logo STAN di sini. Ganti src dengan link gambar logomu -->
+                            <img src="https://i.ibb.co.com/your-stan-logo-link.png" alt="Logo STAN" class="stan-logo" id="stanLogo">
+                        </div>
+                        <div class="card-footer">
+                            <p>Klik kartu untuk melihat definisi</p>
+                        </div>
                     </div>
-                    <div class="back">
-                        <p>Definisi:</p>
-                        <h3 id="cardDef">-</h3>
+                    <!-- Sisi Belakang Kartu (Definisi) -->
+                    <div class="card-face card-back">
+                        <div class="card-header">
+                            <span class="card-name">Definisi</span>
+                        </div>
+                        <div class="card-text">
+                            <p id="cardDef">Definisi akan muncul di sini.</p>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="game-controls">
-                <button id="prevBtn">Sebelumnya</button>
+                <button id="prevBtn">‹ Sebelumnya</button>
                 <button id="flipBtn">Balik Kartu</button>
-                <button id="nextBtn">Berikutnya</button>
+                <button id="nextBtn">Berikutnya ›</button>
             </div>
         </section>
 
-        <!-- Daftar Glosarium -->
+        <!-- Daftar Glosarium Real-Time -->
         <section class="card list-section">
-            <h2>Daftar Istilah</h2>
+            <h2>Daftar Istilah (Live Update)</h2>
             <ul id="glossaryList"></ul>
         </section>
     </main>
