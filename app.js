@@ -5,13 +5,23 @@ const DB_URL = "https://api.npoint.io/f8cc9c6d4d0161d61098"; // Ganti dengan lin
 let termsArray = [];
 let currentCardIndex = 0;
 
+// === EFEK SUARA ===
+const flipSound = new Audio('flip.mp3');
+const successSound = new Audio('success.mp3');
+// ==================
+
 // --- LOGIKA TAMBAH ISTILAH ---
 const addTermBtn = document.getElementById('addTermBtn');
 if (addTermBtn) {
     addTermBtn.addEventListener('click', async () => {
         const term = document.getElementById('termInput').value.trim();
         const def = document.getElementById('defInput').value.trim();
-
+                
+        loadGlossary(); // Muat ulang data
+                
+        successSound.currentTime = 0; // Reset suara dari awal
+        successSound.play(); // <--- TAMBAHKAN INI untuk bunyi sukses
+        
         if (term && def) {
             try {
                 // Ambil data lama, tambah data baru, lalu simpan kembali
@@ -109,6 +119,18 @@ const prevBtn = document.getElementById('prevBtn');
 if (flipBtn) {
     flipBtn.addEventListener('click', () => flashcard.classList.toggle('flipped'));
     flashcard.addEventListener('click', () => flashcard.classList.toggle('flipped'));
+}
+if (flipBtn) {
+    flipBtn.addEventListener('click', () => {
+        flipSound.currentTime = 0; // Reset suara dari awal
+        flipSound.play(); // <--- TAMBAHKAN INI untuk bunyi balik kartu
+        flashcard.classList.toggle('flipped');
+    });
+    flashcard.addEventListener('click', () => {
+        flipSound.currentTime = 0; // Reset suara dari awal
+        flipSound.play(); // <--- TAMBAHKAN INI juga
+        flashcard.classList.toggle('flipped');
+    });
 }
 
 if (nextBtn) {
