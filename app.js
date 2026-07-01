@@ -1,5 +1,5 @@
 // === KONFIGURASI ===
-const DB_URL = "https://www.npoint.io/docs/f8cc9c6d4d0161d61098"; // Ganti dengan link npoint kamu
+const DB_URL = "https://api.npoint.io/f8cc9c6d4d0161d61098"; // Ganti dengan link npoint kamu
 // ====================
 
 let termsArray = [];
