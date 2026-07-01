@@ -1,19 +1,6 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-// === KONFIGURASI FIREBASE KAMU DI SINI ===
-const firebaseConfig = {
-  apiKey: "API_KEY_KAMU",
-  authDomain: "PROJECT_ID.firebaseapp.com",
-  projectId: "PROJECT_ID_KAMU",
-  storageBucket: "PROJECT_ID.appspot.com",
-  messagingSenderId: "SENDER_ID_KAMU",
-  appId: "APP_ID_KAMU"
-};
-// =========================================
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// === KONFIGURASI ===
+const DB_URL = "https://www.npoint.io/docs/f8cc9c6d4d0161d61098"; // Ganti dengan link npoint kamu
+// ====================
 
 let termsArray = [];
 let currentCardIndex = 0;
@@ -27,14 +14,28 @@ if (addTermBtn) {
 
         if (term && def) {
             try {
-                // Menambahkan data ke Firebase dengan timestamp server
-                await addDoc(collection(db, "glossary"), {
+                // Ambil data lama, tambah data baru, lalu simpan kembali
+                const newTerm = {
                     term: term,
                     definition: def,
-                    createdAt: serverTimestamp() // Untuk mengurutkan kartu
+                    createdAt: Date.now()
+                };
+                
+                termsArray.push(newTerm);
+                // Urutkan berdasarkan waktu dibuat
+                termsArray.sort((a, b) => a.createdAt - b.createdAt);
+
+                // Kirim data ke npoint
+                await fetch(DB_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(termsArray)
                 });
+
                 document.getElementById('termInput').value = '';
                 document.getElementById('defInput').value = '';
+                
+                loadGlossary(); // Muat ulang data
             } catch (e) {
                 alert("Gagal menyimpan: " + e.message);
             }
@@ -42,37 +43,36 @@ if (addTermBtn) {
     });
 }
 
-// --- MEMUAT DATA REAL-TIME UNTUK SEMUA ORANG ---
-function loadGlossary() {
-    // Urutkan berdasarkan waktu dibuat
-    const q = query(collection(db, "glossary"), orderBy("createdAt", "asc"));
-    
-    onSnapshot(q, (snapshot) => {
-        termsArray = [];
+// --- MEMUAT DATA REAL-TIME (DENGAN POLLING) ---
+async function loadGlossary() {
+    try {
+        const res = await fetch(DB_URL);
+        let data = await res.json();
+        
+        if (!Array.isArray(data)) data = []; // Jika kosong, buat array kosong
+        
+        termsArray = data;
+        termsArray.sort((a, b) => a.createdAt - b.createdAt); // Urutkan
+        
         const list = document.getElementById('glossaryList');
         list.innerHTML = '';
         
         let counter = 1;
-        snapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            data.id = docSnap.id;
-            data.cardNumber = counter; // Beri nomor urut kartu
-            termsArray.push(data);
+        termsArray.forEach((item) => {
+            item.cardNumber = counter;
             
-            // Tambahkan ke list HTML
             const li = document.createElement('li');
             li.innerHTML = `
                 <div>
-                    <strong>#${counter} ${data.term}</strong> <br>
-                    <small>${data.definition}</small>
+                    <strong>#${counter} ${item.term}</strong> <br>
+                    <small>${item.definition}</small>
                 </div>
-                <button onclick="deleteTerm('${docSnap.id}')">Hapus</button>
+                <button onclick="deleteTerm('${item.createdAt}')">Hapus</button>
             `;
             list.appendChild(li);
             counter++;
         });
 
-        // Update tampilan kartu
         if (termsArray.length > 0) {
             if (currentCardIndex >= termsArray.length) currentCardIndex = 0;
             updateFlashcard();
@@ -81,12 +81,23 @@ function loadGlossary() {
             document.getElementById('cardDef').textContent = "Tambahkan istilah pertamamu!";
             document.getElementById('cardNumber').textContent = "#0";
         }
-    });
+    } catch (e) {
+        console.error("Error loading data:", e);
+    }
 }
 
-// Fungsi delete global
-window.deleteTerm = async (id) => {
-    await deleteDoc(doc(db, "glossary", id));
+// Fungsi delete
+window.deleteTerm = async (timestamp) => {
+    // Hapus berdasarkan waktu dibuat
+    termsArray = termsArray.filter(item => String(item.createdAt) !== String(timestamp));
+    
+    await fetch(DB_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(termsArray)
+    });
+    
+    loadGlossary();
 }
 
 // --- KONTROL GAME FLASHCARD ---
@@ -127,5 +138,9 @@ function updateFlashcard() {
     }
 }
 
-// Mulai memuat data saat web dibuka
+// --- SIMULASI REAL-TIME ---
+// Mengecek database baru setiap 3 detik agar kartu selalu update jika ada orang lain menambah
+setInterval(loadGlossary, 3000);
+
+// Muat data pertama kali saat web dibuka
 loadGlossary();
