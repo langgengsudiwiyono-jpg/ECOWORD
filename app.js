@@ -117,10 +117,6 @@ const nextBtn = document.getElementById('nextBtn');
 const prevBtn = document.getElementById('prevBtn');
 
 if (flipBtn) {
-    flipBtn.addEventListener('click', () => flashcard.classList.toggle('flipped'));
-    flashcard.addEventListener('click', () => flashcard.classList.toggle('flipped'));
-}
-if (flipBtn) {
     flipBtn.addEventListener('click', () => {
         flipSound.currentTime = 0; // Reset suara dari awal
         flipSound.play(); // <--- TAMBAHKAN INI untuk bunyi balik kartu
